@@ -1,0 +1,8 @@
+# ignore dependent
+node_modules
+
+# ignore build file
+dist
+
+# ignore log
+yarn-error.log

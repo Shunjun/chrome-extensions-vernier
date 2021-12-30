@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "Vernier",
+  "description": "The website vernier caliper",
+  "version": "0.0.1",
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "notifications",
+    "activeTab",
+    "scripting"
+  ],
+  "background": {
+    "service_worker": "background/index.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*/*", "http://*/*"],
+      "js": ["scripts/index.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["images/*", "style/*"],
+      "matches": ["https://*/*", "http://*/*"]
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "16": "images/vernier_128.png",
+      "32": "images/vernier_128.png",
+      "48": "images/vernier_128.png",
+      "128": "images/vernier_128.png"
+    }
+  },
+  "icons": {
+    "16": "images/vernier_128.png",
+    "32": "images/vernier_128.png",
+    "48": "images/vernier_128.png",
+    "128": "images/vernier_128.png"
+  }
+}

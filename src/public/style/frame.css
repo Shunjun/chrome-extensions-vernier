@@ -1,0 +1,38 @@
+.vernier-current-frame-base {
+  position: absolute;
+  z-index: 99999;
+  border: 1px solid red;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.vernier-click-frame-base {
+  position: absolute;
+  z-index: 99998;
+  border: 1px solid red;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.vernier-ruler-base {
+  pointer-events: none;
+  box-sizing: border-box;
+  position: absolute;
+  border: 1px solid red;
+  top: 0px;
+  left: 0px;
+}
+
+.vernier-ruler-width {
+  width: 100%;
+  height: 1px;
+}
+
+.vernier-ruler-height {
+  height: 100%;
+  width: 1px;
+}
+
+.vernier-ruler-base::before {
+  content: "";
+}
