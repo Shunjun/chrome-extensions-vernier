@@ -1,6 +1,6 @@
 /*
  * @Author 舜君
- * @LastEditTime 2021-12-30 01:35:35
+ * @LastEditTime 2022-01-04 13:56:51
  * @Description
  */
 import typescript from "rollup-plugin-typescript2";
@@ -12,6 +12,7 @@ export default {
   input: {
     "scripts/index": "src/scripts/index.ts",
     "background/index": "src/background/index.ts",
+    "popup/index": "src/popup/index.ts",
   },
   output: {
     dir: "dist",
@@ -23,7 +24,10 @@ export default {
       targets: "dist/*",
     }),
     copy({
-      targets: [{ src: "src/public/*", dest: "dist" }],
+      targets: [
+        { src: "src/public/*", dest: "dist" },
+        { src: "src/popup/**/*.(css|html)", dest: "dist/popup" },
+      ],
     }),
     nodeResolve(),
     typescript({

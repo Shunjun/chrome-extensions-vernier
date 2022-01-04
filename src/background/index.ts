@@ -1,6 +1,6 @@
 /*
  * @Author 舜君
- * @LastEditTime 2021-12-30 13:10:47
+ * @LastEditTime 2022-01-04 13:59:05
  * @Description
  */
 
@@ -8,7 +8,16 @@ const { action, scripting, tabs, storage } = chrome;
 
 chrome.runtime.onInstalled.addListener(() => {
   // chrome.storage.sync.set({ color });
-  // console.log("Default background color set to %cgreen", `color: ${color}`);
+
+  const options: Options = {
+    fontSize: "12px",
+    mainColor: "#FF4848",
+    borderWidth: 2,
+    shortcutKeys: {
+      catch: "alt",
+    },
+  };
+  chrome.storage.local.set({ options });
 });
 
 async function getCurrentTab() {
@@ -20,8 +29,6 @@ async function getCurrentTab() {
 action.onClicked.addListener(async () => {
   const tab = await getCurrentTab();
   const { currentTabStatus } = await storage.local.get("currentTabStatus");
-
-  console.log(currentTabStatus);
 
   if (tab.id) {
     if (!currentTabStatus) {

@@ -1,45 +1,133 @@
 /*
  * @Author 舜君
- * @LastEditTime 2021-12-30 16:57:33
+ * @LastEditTime 2022-01-04 22:50:57
  * @Description
  */
-import { setStyle, loadCss, setClassName } from "../utils/style";
 import throttle from "../utils/throttle";
-import once from "../utils/once";
+import Rect from "./Rect";
+import Placeholder from "./elements/Placeholder";
+import Container from "./elements/Container";
+import preventPageScroll from "./helper/preventPageScroll";
+import Marker from "./elements/Marker";
+import calculateMarkers from "./helper/calculateMarkers";
 
 export default class Vernier {
   /**
+   *
+   */
+  private active: boolean = false;
+
+  /**
    * 容器标尺容器
    */
-  content!: HTMLElement;
+  private container!: Container;
 
   /**
    * 用于显示当前选框的元素
    */
-  currentFrame!: HTMLElement;
+  private placeholder!: Placeholder;
 
   /**
-   * 点击产生的选框元素
+   * 鼠标当前选择的元素
    */
-  clickFrame!: DocumentFragment;
+  private currentholder: Placeholder;
+
+  /**
+   * 标尺
+   */
+  private markers: Marker[] = [];
 
   /**
    * 当前鼠标 hover 的元素
    */
-  currentEle?: HTMLElement;
+  private targetEle?: HTMLElement;
+
+  /**
+   * 起始选择的元素
+   */
+  private selectedEle?: HTMLElement;
+
+  /**
+   * 设置项
+   */
+  private options: Options = {} as Options;
 
   constructor() {
-    this.initElement();
+    this.container = new Container();
+    this.placeholder = new Placeholder("placeholder");
+    this.currentholder = new Placeholder("currentholder");
+    this.currentholder.showSelfInfo();
+    this.container.appendChild(this.currentholder);
   }
 
-  start() {
-    document.body.appendChild(this.currentFrame);
+  async start() {
+    if (!document.body) {
+      console.warn(`Unable to initialise, document.body does not exist.`);
+      return;
+    }
+    document.body.appendChild(this.container.dom);
+
+    /**
+     * 启动后缓存设置项, 修改设置后需要重启
+     */
+    const { options } = await chrome.storage.local.get("options");
+    this.options = options || {};
+
+    document.addEventListener("keydown", this.onKeyDown.bind(this));
+    document.addEventListener("keyup", this.onKeyUp.bind(this));
     document.addEventListener("mousemove", this.throttledMouseMove, false);
   }
 
-  stop() {
-    document.body.removeChild(this.currentFrame);
+  async stop() {
+    this.container.dom.remove();
+    this.clearUp();
+
+    document.removeEventListener("keydown", this.onKeyDown.bind(this));
+    document.removeEventListener("keyup", this.onKeyUp.bind(this));
     document.removeEventListener("mousemove", this.throttledMouseMove, false);
+  }
+
+  // 重启
+  async restart() {
+    await this.stop();
+    await this.start();
+  }
+
+  onKeyDown(e: KeyboardEvent) {
+    const { shortcutKeys } = this.options;
+    const catchKey = shortcutKeys?.catch || "alt";
+
+    if (!this.targetEle) return;
+
+    if (e.key.toLocaleLowerCase() === catchKey) {
+      preventPageScroll(true);
+
+      // 保存选择的原始元素
+      this.selectedEle = this.targetEle;
+
+      const DOMRect = this.targetEle?.getBoundingClientRect();
+      const rect = new Rect(DOMRect);
+
+      this.placeholder.updateRect(rect);
+      this.placeholder.showSelfInfo();
+
+      this.container.appendChild(this.placeholder);
+
+      this.active = true;
+    }
+  }
+
+  onKeyUp(e: KeyboardEvent) {
+    const { shortcutKeys } = this.options;
+    const catchKey = shortcutKeys?.catch || "alt";
+
+    if (e.key.toLocaleLowerCase() === catchKey) {
+      preventPageScroll(false);
+
+      this.clearUp();
+
+      this.active = false;
+    }
   }
 
   /**
@@ -48,108 +136,69 @@ export default class Vernier {
    * @returns
    */
   onMouseMove(e: MouseEvent) {
-    const target = e.target;
+    const target = e.target as HTMLElement;
 
-    if (!target || target === this.currentEle) {
+    // 鼠标没有切换元素
+    if (!target || target === this.targetEle) return;
+
+    this.targetEle = target as HTMLElement;
+
+    // 鼠标在原始元素上
+    if (target === this.selectedEle) {
+      this.currentholder.remove();
+      this.clearMarkers();
       return;
     }
 
-    this.currentEle = target as HTMLElement;
-    const currentEle = this.currentEle;
+    if (this.active) {
+      const exictCurrentholder =
+        this.container.dom.querySelector("#currentholder");
 
-    const height = currentEle.offsetHeight;
-    const width = currentEle.offsetWidth;
-    const [top, left] = this.elementRelativelyBody(currentEle);
+      if (!exictCurrentholder) {
+        this.container.appendChild(this.currentholder);
+      }
 
-    const currentStyle = {
-      height: `${height}px`,
-      width: `${width}px`,
-      top: `${top}px`,
-      left: `${left}px`,
-    };
+      const DOMRect = target.getBoundingClientRect();
+      const rect = new Rect(DOMRect);
 
-    setStyle(this.currentFrame, currentStyle);
+      this.currentholder.updateRect(rect);
 
-    once(this.currentEle, "click", this.onElementClick);
+      this.renderMarkers();
+    }
   }
 
   // 节流鼠标移动事件
-  throttledMouseMove = throttle(this.onMouseMove, 200).bind(this);
+  throttledMouseMove = throttle(this.onMouseMove, 100).bind(this);
 
-  /**
-   * 初始化用到的元素
-   */
-  initElement() {
-    // 加载 css 样式表
-    const url = chrome.runtime.getURL("style/frame.css");
-    loadCss(url);
-
-    this.createCurrentFrame();
-    this.createClickFrame();
-  }
-
-  /**
-   * 创建当前鼠标框
-   */
-  createCurrentFrame() {
-    this.currentFrame = document.createElement("div");
-    setClassName(this.currentFrame, "vernier-current-frame-base");
-  }
-
-  /**
-   * 创建点击选中框
-   */
-  createClickFrame() {
-    this.clickFrame = document.createDocumentFragment();
-
-    const frame = document.createElement("div");
-    setClassName(frame, "vernier-click-frame-base");
-
-    // 横竖标尺
-    const widthRuler = document.createElement("div");
-    const heightRuler = document.createElement("div");
-    setClassName(widthRuler, "vernier-ruler-base");
-    setClassName(heightRuler, "vernier-ruler-base");
-
-    setClassName(widthRuler, "vernier-ruler-width");
-    setClassName(heightRuler, "vernier-ruler-height");
-
-    frame.append(widthRuler, heightRuler);
-
-    this.clickFrame.append(frame);
-  }
-
-  /**
-   * 点击
-   * @param e
-   */
-  onElementClick(e: MouseEvent) {
-    e.preventDefault();
-  }
-
-  /**
-   * 获取元素到根节点的距离
-   * @param ele
-   * @returns
-   */
-  elementRelativelyBody(ele: HTMLElement): [number, number] {
-    const parent = ele.offsetParent;
-    if (parent === null) {
-      return [ele.offsetTop, ele.offsetLeft];
+  renderMarkers() {
+    if (!this.placeholder.rect || !this.currentholder.rect) {
+      return;
     }
-    const [top, left] = this.elementRelativelyBody(parent as HTMLElement);
-    return [top + ele.offsetTop, left + ele.offsetLeft];
+
+    // 清除旧标尺
+    this.clearMarkers();
+
+    this.markers.push(
+      ...calculateMarkers(this.placeholder.rect, this.currentholder.rect)
+    );
+
+    this.markers.forEach((marker) => {
+      this.container.appendChild(marker);
+    });
+  }
+
+  // 清除标线
+  clearMarkers() {
+    this.markers.forEach((marker) => {
+      marker.remove();
+    });
+    this.markers.length = 0;
+  }
+
+  // 全部清除
+  clearUp() {
+    this.clearMarkers();
+    this.placeholder.remove();
+    this.currentholder.remove();
   }
 }
-
-function showSelfSize(ele: HTMLElement) {
-  const widthSizeDiv = document.createElement("div");
-
-  const style = {
-    "": "",
-  };
-
-  setStyle(widthSizeDiv, style);
-}
-
-function hideSelfSize() {}
