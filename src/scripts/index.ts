@@ -1,9 +1,9 @@
 /*
  * @Author 舜君
- * @LastEditTime 2021-12-30 13:05:35
+ * @LastEditTime 2022-01-05 14:18:53
  * @Description
  */
-import Vernier from "./Vernier";
+import Vernier from "./core/Vernier";
 
 window.addEventListener("load", function () {
   const vernier = new Vernier();

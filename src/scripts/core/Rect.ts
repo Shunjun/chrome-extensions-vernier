@@ -1,6 +1,6 @@
 /*
  * @Author 舜君
- * @LastEditTime 2022-01-04 21:17:08
+ * @LastEditTime 2022-01-05 13:35:46
  * @Description
  */
 export default class Rect {
@@ -52,6 +52,26 @@ export default class Rect {
       other.left <= this.right &&
       this.right <= other.right
     );
+  }
+
+  // 当前 rect 在 other rect 的上方
+  onTop(other: Rect) {
+    return this.top < other.top && this.bottom <= other.top;
+  }
+
+  // 当前 rect 在 other rect 的左方
+  onLeft(other: Rect) {
+    return this.left < other.left && this.right <= other.left;
+  }
+
+  // 当前 rect 在 other rect 的右方
+  onRight(other: Rect) {
+    return this.right > other.right && this.left >= other.right;
+  }
+
+  // 当前 rect 在 other rect 的下方
+  onBottom(other: Rect) {
+    return this.bottom > other.bottom && this.top >= other.bottom;
   }
 
   // 垂直方向有重叠

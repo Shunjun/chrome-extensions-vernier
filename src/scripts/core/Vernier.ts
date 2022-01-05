@@ -1,15 +1,15 @@
 /*
  * @Author 舜君
- * @LastEditTime 2022-01-04 22:50:57
+ * @LastEditTime 2022-01-04 23:24:02
  * @Description
  */
-import throttle from "../utils/throttle";
-import Rect from "./Rect";
-import Placeholder from "./elements/Placeholder";
-import Container from "./elements/Container";
-import preventPageScroll from "./helper/preventPageScroll";
-import Marker from "./elements/Marker";
-import calculateMarkers from "./helper/calculateMarkers";
+import throttle from "../../utils/throttle";
+import Rect from "../core/Rect";
+import Placeholder from "../elements/Placeholder";
+import Container from "../elements/Container";
+import preventPageScroll from "../helper/preventPageScroll";
+import Marker from "../elements/Marker";
+import calculateMarkers from "../helper/calculateMarkers";
 
 export default class Vernier {
   /**

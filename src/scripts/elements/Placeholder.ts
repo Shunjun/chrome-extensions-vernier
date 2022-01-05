@@ -4,7 +4,7 @@
  * @Description
  */
 
-import Rect from "../Rect";
+import Rect from "../core/Rect";
 import VNode from "./VNode";
 
 // function create
